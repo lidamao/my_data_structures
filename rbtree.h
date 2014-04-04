@@ -9,6 +9,7 @@
  */
 
 #include "memorypool.h"
+#include <new>
 
 //! @{
 template <typename KeyType, typename ValueType, typename Allocator=mempool::BitmapMemPool >
@@ -281,6 +282,19 @@ public:
         }
     }
     
+    void Traverse(void (*visit)(void* key, void* value, void* param), void* param){
+        //in order traversal
+        InOrderTraverse(root_, visit, param);
+    }
+
+    void InOrderTraverse(RBNode* curr, void (*visit)(void*, void*, void*), void* param){
+        if(curr != nil_){
+            InOrderTraverse(curr->left, visit, param);
+            (*visit)(&curr->key, &curr->value, param);
+            InOrderTraverse(curr->right, visit, param) ;
+        }
+    }
+
     
 //@}
 

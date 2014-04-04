@@ -8,6 +8,9 @@
 #ifndef  __MEMORY_POOL_H_
 #define  __MEMORY_POOL_H_
 
+#include <stdlib.h>
+#include <string.h>
+
 namespace mempool{
 
 #define  ALIGNMENT    8        //alignling size to 8
