@@ -105,7 +105,7 @@ public:
         return 0;
     }   
 
-    //! construct heap from initial data list 
+    //! construct heap from initial data list (heapify robert floyd 1964)
     //! data must have same life cycle with heap
     int HeapBuild(const KeyType *data, int count){
         if(count <= 0 || Resize(count * 2) < 0)   // twice space for insert
@@ -117,31 +117,59 @@ public:
         }
 
         count_ = count;
-        int end = count-1;
-        if(end == 0){
-            return 0;
-        }
-
-        //自底向上堆构造法, 小根堆
-        int lastNonLeafNode = (end-1) / 2; //最后一个非叶子结点
-        if(end & 0x1){  // not divisible by 2, only left
-            if(CompareNode(root_[end].key, root_[lastNonLeafNode].key) < 0){
-                SwapNode(end, lastNonLeafNode);
-            }
-            lastNonLeafNode--;
-        }  
-        //剩下的均有左右子结点,可以不用判断
+        //floyd堆构造法
+        int lastNonLeafNode = (count-2) / 2; //最后一个非叶子结点编号
+        
         for(int i=lastNonLeafNode; i>=0; i--){
-            int left = LEFT_CHILD(i);
-            //int right = left+1;
-            if(CompareNode(root_[left+1].key, root_[left].key) < 0){  //左右结点比较
-                left++;           //pick smaller child
-            }
-            if(CompareNode(root_[left].key, root_[i].key) < 0){  //子结点与父结点比较
-                SwapNode(left, i);
-            }
+            HeapDown(i, count-1);    
         }
         return 0;
+    }
+
+    //下滤, pos 下滤结点编号, end 末结点编号
+    void HeapDown(int pos, int end) 
+    {
+        HeapNode  t = root_[pos];
+        int curr = pos;
+        while(true){
+            int left = LEFT_CHILD(pos);
+            int right = left+1;
+            if(right < end && CompareNode(root_[right].key, root_[left].key) < 0){  //左右结点比较
+                left = right;
+            }
+            if(left < end && CompareNode(root_[left].key, t.key) < 0){  
+                root_[pos] = root_[left];
+                pos = left;
+            }
+            else{
+                break;
+            }
+        }
+        if(curr != pos){
+            root_[pos] = t;
+        }
+        return ;
+    }
+
+    //上滤, pos 上滤结点编号
+    void HeapUp(int pos)
+    {
+        HeapNode  t = root_[pos];
+        int  curr = pos;
+        while(pos > 0){
+            int parent = PARENT(pos);
+            if(CompareNode(root_[pos].key, root_[parent].key) < 0){ //子结点比父结点小,继续往上
+                root_[pos] = root_[parent];
+                pos = parent;
+            }
+            else{
+                break;
+            }
+        }
+        if(pos != curr)
+            root_[pos] = t;
+
+        return;
     }
 
     int Insert(const KeyType *data){
@@ -150,20 +178,9 @@ public:
                 return -1;
         }
         //从最后沿父结点往上筛选
-        int pos = count_;    //insert position
-        while(pos > 0){
-            int parent = PARENT(pos);
-            if(CompareNode(data, root_[parent].key) < 0){   //子结点比父结点小,继续往上
-                root_[pos] = root_[parent];
-                pos = parent;
-            }
-            else{
-                break;
-            }
-        }
-        //insert
-        root_[pos].key = data;
+        root_[count_].key = data;     
         count_++;
+        HeapUp(count_);
         
         return 0;
     }
@@ -174,26 +191,10 @@ public:
             count_ = 0;
             return 0;
         }
-
-        //最后一个结点代替root, 然后往下筛选
-        int pos = 0;    //last node replace position
-        int end = count_-1;  //last node position
-        while(true){
-            int left = LEFT_CHILD(pos);
-            int right = left+1;
-            if(right < end && CompareNode(root_[left+1].key, root_[left].key) < 0){  //左右结点比较
-                left = right;
-            }
-            if(left < end && CompareNode(root_[left].key, root_[end].key) < 0){  
-                root_[pos] = root_[left];
-                pos = left;
-            }
-            else{
-                break;
-            }
-        }
-        root_[pos] = root_[end];
         count_--;
+        root_[0] = root_[count_];
+        
+        HeapDown(0, count_-1);
         return 0;
     }
 
